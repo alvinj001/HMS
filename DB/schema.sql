@@ -8,6 +8,14 @@
 
 -- ========================================
 
+CREATE TABLE roles(
+    role_id INT NOT NULL AUTO_INCREMENT,
+    role_name ENUM('admin', 'doctor', 'nurse', 'patient', 'pharmacist', 'lab_tech', 'billing'),
+    role_description TEXT,
+
+    PRIMARY KEY (role_id)
+)
+
 CREATE TABLE users (
     user_id INT NOT NULL AUTO_INCREMENT,
     username VARCHAR(255),
@@ -21,14 +29,6 @@ CREATE TABLE users (
     PRIMARY KEY (user_id)
     FOREIGN KEY (role_id) REFERENCES roles(role_id)
 
-)
-
-CREATE TABLE roles(
-    role_id INT NOT NULL AUTO_INCREMENT,
-    role_name ENUM('admin', 'doctor', 'nurse', 'patient', 'pharmacist', 'lab_tech', 'billing'),
-    role_description TEXT,
-
-    PRIMARY KEY (role_id)
 )
 
 -- ======================================
