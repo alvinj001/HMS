@@ -15,7 +15,7 @@ CREATE TABLE users (
     email VARCHAR(255),
     phone VARCHAR(255),
     role_id INT,
-    account_status ENUM(active, inactive),
+    account_status ENUM('active', 'inactive'),
     created_at TIMESTAMP
 
     PRIMARY KEY (user_id)
@@ -25,7 +25,7 @@ CREATE TABLE users (
 
 CREATE TABLE roles(
     role_id INT NOT NULL AUTO_INCREMENT,
-    role_name ENUM(admin, doctor, nurse, patient, pharmacist, lab_tech, billing),
+    role_name ENUM('admin', 'doctor', 'nurse', 'patient', 'pharmacist', 'lab_tech', 'billing'),
     role_description TEXT,
 
     PRIMARY KEY (role_id)
@@ -43,11 +43,11 @@ CREATE TABLE patients(
     first_name VARCHAR(255) NOT NULL,
     last_name VARCHAR(255) NOT NULL,
     middle_name VARCHAR(255),
-    gender ENUM(M, F, Other),
+    gender ENUM('M', 'F', 'Other'),
     dob DATE,
     patient_address TEXT,
     emergency_contact VARCHAR(255),
-    blood_type ENUM(A+, A-, B+, B-, AB+, AB-, O+, O-),
+    blood_type ENUM('A+', 'A-', 'B+', 'B-',' AB+', 'AB-',' O+', 'O-'),
     allergies TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
@@ -61,7 +61,7 @@ CREATE TABLE staff(
     first_name VARCHAR(255) NOT NULL,
     middle_name VARCHAR(255)
     last_name VARCHAR(255) NOT NULL,
-    gender ENUM(M, F, Other),
+    gender ENUM('M', 'F', 'Other'),
     dob DATE,
     department_id INT,
     designation VARCHAR(255),
@@ -91,9 +91,9 @@ CREATE TABLE departments(
 CREATE TABLE rooms(
     room_id INT NOT NULL,
     department_id INT,
-    room_type ENUM(ICU, General, Private, Operation),
+    room_type ENUM('ICU', 'General', 'Private', 'Operation'),
     capacity INT,
-    room_status ENUM(available, occupied, maintenance)
+    room_status ENUM('available', 'occupied', 'maintenance')
 
     PRIMARY KEY (room_id)
     FOREIGN KEY (department_id) REFERENCES departments(department_id)
@@ -112,7 +112,7 @@ CREATE TABLE appointments(
     appointment_date DATE,
     appointment_start_time TIME,
     appointment_end_time TIME,
-    appointment_status ENUM(scheduled, completed, cancelled),
+    appointment_status ENUM('scheduled', 'completed', 'cancelled'),
     notes TEXT,
 
     PRIMARY KEY (appointment_id)
@@ -225,7 +225,7 @@ CREATE TABLE billing(
     patient_id INT,
     appointment_id INT,
     amount DECIMAL,
-    payment_status ENUM(paid, pending, cancelled),
+    payment_status ENUM('paid', 'pending', 'cancelled'),
     payment_date DATE,
 
     PRIMARY KEY (bill_id)
@@ -238,7 +238,7 @@ CREATE TABLE insurance_claims(
     patient_id INT,
     insurance_provider VARCHAR(255),
     policy_number VARCHAR(255),
-    claim_status ENUM(submitted, approved, denied, pending),
+    claim_status ENUM('submitted', 'approved', 'denied', 'pending'),
     claim_amount DECIMAL,
     submission_date DATE,
 
