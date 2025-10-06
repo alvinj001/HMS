@@ -1,252 +1,275 @@
--- ===============================
--- Lookup / Reference Tables
--- ===============================
+-- ========================================
+-- NEW HOSPITAL MANAGEMENT SYSTEM DATABASE
+-- ========================================
 
--- Shipment Statuses
-CREATE TABLE shipment_statuses (
-    status_id INT AUTO_INCREMENT PRIMARY KEY,
-    status_name VARCHAR(50) UNIQUE NOT NULL
-);
+-- ========================================
 
-INSERT INTO shipment_statuses (status_name) VALUES 
-('Pending'), ('In Transit'), ('Delivered'), ('Cancelled'), ('Waiting for Carrier'), ('At Warehouse');
+-- 01. USER ROLES & MANAGEMENT
 
--- Shipment Types (optional if needed)
-CREATE TABLE shipment_types (
-    shipment_type_id INT AUTO_INCREMENT PRIMARY KEY,
-    type_name VARCHAR(50) UNIQUE NOT NULL
-);
+-- ========================================
 
-INSERT INTO shipment_types (type_name) VALUES ('Air'), ('Sea'), ('Land'), ('Multimodal');
-
--- Payment Methods
-CREATE TABLE payment_methods (
-    payment_method_id INT AUTO_INCREMENT PRIMARY KEY,
-    method_name VARCHAR(50) UNIQUE NOT NULL
-);
-
-INSERT INTO payment_methods (method_name) VALUES ('Bank Transfer'), ('Credit Card'), ('Cash'), ('Other');
-
--- Document Types
-CREATE TABLE document_types (
-    document_type_id INT AUTO_INCREMENT PRIMARY KEY,
-    type_name VARCHAR(50) UNIQUE NOT NULL
-);
-
-INSERT INTO document_types (type_name) VALUES ('Bill of Lading'), ('Air Waybill'), ('Invoice'), ('Customs Form'), ('Other');
-
--- User Roles
-CREATE TABLE user_roles (
-    role_id INT AUTO_INCREMENT PRIMARY KEY,
-    role_name VARCHAR(50) UNIQUE NOT NULL
-);
-
-INSERT INTO user_roles (role_name) VALUES ('Admin'), ('Operations'), ('Finance'), ('Warehouse'), ('Client');
-
--- Customs Statuses
-CREATE TABLE customs_statuses (
-    status_id INT AUTO_INCREMENT PRIMARY KEY,
-    status_name VARCHAR(50) UNIQUE NOT NULL
-);
-
-INSERT INTO customs_statuses (status_name) VALUES ('Submitted'), ('Cleared'), ('On Hold');
-
--- ===============================
--- Core Entities
--- ===============================
-
--- Clients
-CREATE TABLE clients (
-    client_id INT AUTO_INCREMENT PRIMARY KEY,
-    client_name VARCHAR(255) NOT NULL,
-    contact_person VARCHAR(255),
-    phone VARCHAR(50),
-    email VARCHAR(255),
-    address VARCHAR(500),
-    city VARCHAR(100),
-    country VARCHAR(100),
-    tax_id VARCHAR(100),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-
--- Carriers
-CREATE TABLE carriers (
-    carrier_id INT AUTO_INCREMENT PRIMARY KEY,
-    carrier_name VARCHAR(255) NOT NULL,
-    carrier_type VARCHAR(50) NOT NULL, -- Air, Sea, Land
-    contact_person VARCHAR(255),
-    phone VARCHAR(50),
-    email VARCHAR(255),
-    address VARCHAR(500),
-    city VARCHAR(100),
-    country VARCHAR(100),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-
--- Warehouses
-CREATE TABLE warehouses (
-    warehouse_id INT AUTO_INCREMENT PRIMARY KEY,
-    warehouse_name VARCHAR(255) NOT NULL,
-    address VARCHAR(500),
-    city VARCHAR(100),
-    country VARCHAR(100),
-    capacity DECIMAL(12,2),
-    contact_person VARCHAR(255),
-    phone VARCHAR(50),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-
--- Users
 CREATE TABLE users (
-    user_id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(100) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    role_id INT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_login TIMESTAMP NULL,
-    FOREIGN KEY (role_id) REFERENCES user_roles(role_id)
-);
+    user_id INT NOT NULL AUTO_INCREMENT,
+    username VARCHAR(255),
+    password_hash VARCHAR(255),
+    email VARCHAR(255),
+    phone VARCHAR(255),
+    role_id INT,
+    account_status ENUM(active, inactive),
+    created_at TIMESTAMP
 
--- Routes (optional, can be used for planning)
-CREATE TABLE routes (
-    route_id INT AUTO_INCREMENT PRIMARY KEY,
-    origin_city VARCHAR(100),
-    destination_city VARCHAR(100),
-    distance DECIMAL(10,2),
-    estimated_duration VARCHAR(50)
-);
+    PRIMARY KEY (user_id)
+    FOREIGN KEY (role_id) REFERENCES roles(role_id)
+
+)
+
+CREATE TABLE roles(
+    role_id INT NOT NULL AUTO_INCREMENT,
+    role_name ENUM(admin, doctor, nurse, patient, pharmacist, lab_tech, billing),
+    role_description TEXT,
+
+    PRIMARY KEY (role_id)
+)
+
+-- ======================================
+
+-- 02. PATIENTS & STAFF
+
+-- ======================================
+ 
+CREATE TABLE patients(
+    patient_id INT NOT NULL,
+    user_id INT,
+    first_name VARCHAR(255) NOT NULL,
+    last_name VARCHAR(255) NOT NULL,
+    middle_name VARCHAR(255),
+    gender ENUM(M, F, Other),
+    dob DATE,
+    patient_address TEXT,
+    emergency_contact VARCHAR(255),
+    blood_type ENUM(A+, A-, B+, B-, AB+, AB-, O+, O-),
+    allergies TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+    PRIMARY KEY (patient_id)
+)
+
+CREATE TABLE staff(
+    staff_id INT NOT NULL AUTO_INCREMENT,
+    user_id INT,
+    first_name VARCHAR(255) NOT NULL,
+    middle_name VARCHAR(255)
+    last_name VARCHAR(255) NOT NULL,
+    gender ENUM(M, F, Other),
+    dob DATE,
+    department_id INT,
+    designation VARCHAR(255),
+    specializaiton VARCHAR(255),
+    hire_date DATE,
+    salary DECIMAL,
+
+    PRIMARY KEY (staff_id)
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+    FOREIGN KEY (department_id) REFERENCES departments(department_id)
+)
+
+-- =====================================
+
+-- 03. DEPARTMENTS & ROOMS
+
+-- ====================================
+
+CREATE TABLE departments(
+    department_id INT NOT NULL,
+    department_name VARCHAR(255),
+    department_description VARCHAR(255),
+
+    PRIMARY KEY (department_id)
+)
+
+CREATE TABLE rooms(
+    room_id INT NOT NULL,
+    department_id INT,
+    room_type ENUM(ICU, General, Private, Operation),
+    capacity INT,
+    room_status ENUM(available, occupied, maintenance)
+
+    PRIMARY KEY (room_id)
+    FOREIGN KEY (department_id) REFERENCES departments(department_id)
+)
+
+-- ==================================
+
+-- 04. APPOINTMENTS & SCHEDULING
+
+-- =================================
+
+CREATE TABLE appointments(
+    appointment_id INT NOT NULL AUTO_INCREMENT,
+    patient_id INT,
+    doctor_id INT,
+    appointment_date DATE,
+    appointment_start_time TIME,
+    appointment_end_time TIME,
+    appointment_status ENUM(scheduled, completed, cancelled),
+    notes TEXT,
+
+    PRIMARY KEY (appointment_id)
+    FOREIGN KEY (patient_id) REFERENCES patients(patient_id)
+    FOREIGN KEY (doctor_id) REFERENCES staff(staff_id)
+
+)
+
+CREATE TABLE schedules(
+    schedule_id INT NOT NULL,
+    staff_id INT,
+    shift_date DATE,
+    shift_start TIME,
+    shift_end TIME,
+
+    PRIMARY KEY (schedule_id)
+    FOREIGN KEY (staff_id) REFERENCES staff(staff_id)
+)
 
 -- ===============================
--- Shipments & Legs
--- ===============================
 
--- Shipments
-CREATE TABLE shipments (
-    shipment_id INT AUTO_INCREMENT PRIMARY KEY,
-    client_id INT NOT NULL,
-    tracking_number VARCHAR(100) UNIQUE NOT NULL,
-    shipment_description VARCHAR(255),
-    total_weight DECIMAL(12,2),
-    total_volume DECIMAL(12,2),
-    status_id INT NOT NULL DEFAULT 1, -- FK to shipment_statuses
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (client_id) REFERENCES clients(client_id) ON DELETE CASCADE,
-    FOREIGN KEY (status_id) REFERENCES shipment_statuses(status_id)
-);
+-- 05. CLINICAL DATA (EHR/EMR)
 
--- Shipment Legs (handles carriers, transport mode, warehouses)
-CREATE TABLE shipment_legs (
-    leg_id INT AUTO_INCREMENT PRIMARY KEY,
-    shipment_id INT NOT NULL,
-    carrier_id INT NOT NULL,
-    mode_of_transport VARCHAR(50) NOT NULL, -- Air, Sea, Land
-    origin_address VARCHAR(500),
-    origin_warehouse_id INT NULL,
-    destination_address VARCHAR(500),
-    destination_warehouse_id INT NULL,
-    departure_date DATETIME,
-    arrival_date DATETIME,
-    status_id INT NOT NULL DEFAULT 1, -- FK to shipment_statuses
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (shipment_id) REFERENCES shipments(shipment_id) ON DELETE CASCADE,
-    FOREIGN KEY (carrier_id) REFERENCES carriers(carrier_id),
-    FOREIGN KEY (origin_warehouse_id) REFERENCES warehouses(warehouse_id),
-    FOREIGN KEY (destination_warehouse_id) REFERENCES warehouses(warehouse_id),
-    FOREIGN KEY (status_id) REFERENCES shipment_statuses(status_id)
-);
+-- ==============================
 
-CREATE INDEX idx_shipment_legs_status ON shipment_legs(status_id);
+CREATE TABLE medical_records(
+    record_id INT NOT NULL,
+    patient_id INT,
+    doctor_id INT,
+    visit_date DATE,
+    visit_time TIME,
+    diagnosis TEXT,
+    treatment TEXT,
+    notes TEXT,
 
--- ===============================
--- Shipment Items
--- ===============================
+    FOREIGN KEY (patient_id) REFERENCES patients(patient_id)
+    FOREIGN KEY (doctor_id) REFERENCES staff (staff_id)
+    PRIMARY KEY (record_id)
+)
 
-CREATE TABLE shipment_items (
-    item_id INT AUTO_INCREMENT PRIMARY KEY,
-    leg_id INT NOT NULL,
-    description VARCHAR(255),
-    quantity INT,
-    weight DECIMAL(12,2),
-    volume DECIMAL(12,2),
-    value DECIMAL(14,2),
-    hs_code VARCHAR(20),
-    FOREIGN KEY (leg_id) REFERENCES shipment_legs(leg_id) ON DELETE CASCADE
-);
+CREATE TABLE prescriptions(
+    prescription_id INT NOT NULL,
+    record_id INT,
+    patient_id INT,
+    doctor_id INT,
+    drug_id INT,
+    dosage VARCHAR(255),
+    frequency VARCHAR(255),
+    duration VARCHAR(255),
 
--- ===============================
--- Tracking Events
--- ===============================
+    FOREIGN KEY (record_id) REFERENCES medical_records(record_id)
+    FOREIGN KEY (patient_id) REFERENCES patients(patient_id)
+    FOREIGN KEY (doctor_id) REFERENCES staff (staff_id)
+    FOREIGN KEY (drug_id) REFERENCES pharmacy_inventory(drug_id)
+    PRIMARY KEY (prescription_id)
+)
 
-CREATE TABLE tracking_events (
-    event_id INT AUTO_INCREMENT PRIMARY KEY,
-    leg_id INT NOT NULL,
-    event_type VARCHAR(50),
-    location VARCHAR(255),
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-    remarks TEXT,
-    FOREIGN KEY (leg_id) REFERENCES shipment_legs(leg_id) ON DELETE CASCADE
-);
+CREATE TABLE lab_tests(
+    test_id INT NOT NULL,
+    patient_id INT,
+    doctor_id INT,
+    test_type VARCHAR(255),
+    result TEXT,
+    result_date DATETIME,
+    lab_tech_id INT,
 
-CREATE INDEX idx_tracking_leg ON tracking_events(leg_id);
+    FOREIGN KEY (lab_tech_id) REFERENCES staff(staff_id)
+    FOREIGN KEY (doctor_id) REFERENCES staff(staff_id)
+    FOREIGN KEY (patient_id) REFERENCES patients(patient_id)
+    PRIMARY KEY (test_id)
+)
 
--- ===============================
--- Documents
--- ===============================
+-- =============================
 
-CREATE TABLE documents (
-    document_id INT AUTO_INCREMENT PRIMARY KEY,
-    leg_id INT NOT NULL,
-    document_type_id INT NOT NULL,
-    file_path VARCHAR(500) UNIQUE,
-    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (leg_id) REFERENCES shipment_legs(leg_id) ON DELETE CASCADE,
-    FOREIGN KEY (document_type_id) REFERENCES document_types(document_type_id)
-);
+-- 06. PHARMACY & INVENTORY
 
--- ===============================
--- Invoices & Payments
--- ===============================
+-- ============================
 
-CREATE TABLE invoices (
-    invoice_id INT AUTO_INCREMENT PRIMARY KEY,
-    shipment_id INT NOT NULL,
-    amount DECIMAL(12,2),
-    currency VARCHAR(10) DEFAULT 'USD',
-    status VARCHAR(50) DEFAULT 'Unpaid',
-    issue_date DATE,
-    due_date DATE,
-    paid_date DATE,
-    FOREIGN KEY (shipment_id) REFERENCES shipments(shipment_id) ON DELETE CASCADE
-);
+CREATE TABLE pharmacy_inventory(
+    drug_id INT NOT NULL,
+    drug_name VARCHAR(255),
+    generic_name VARCHAR(255),
+    category VARCHAR(255),
+    stock INT,
+    reorder_level INT,
+    supplier_id INT,
 
-CREATE TABLE payments (
-    payment_id INT AUTO_INCREMENT PRIMARY KEY,
-    invoice_id INT NOT NULL,
-    payment_method_id INT NOT NULL,
-    amount_paid DECIMAL(12,2),
-    currency VARCHAR(10) DEFAULT 'USD',
+    FOREIGN KEY (supplier_id) REFERENCES suppliers(supplier_id)
+    PRIMARY KEY (drug_id)
+)
+
+CREATE TABLE suppliers(
+    supplier_id INT NOT NULL,
+    supplier_name VARCHAR(255),
+    contact_person VARCHAR(255),
+    phone VARCHAR(255),
+    supplier_address TEXT
+
+    PRIMARY KEY (supplier_id)
+)
+
+-- ============================
+
+-- 07. BILLING & INSURANCE
+
+-- ============================
+
+CREATE TABLE billing(
+    bill_id INT NOT NULL,
+    patient_id INT,
+    appointment_id INT,
+    amount DECIMAL,
+    payment_status ENUM(paid, pending, cancelled),
     payment_date DATE,
-    reference_number VARCHAR(100),
-    FOREIGN KEY (invoice_id) REFERENCES invoices(invoice_id) ON DELETE CASCADE,
-    FOREIGN KEY (payment_method_id) REFERENCES payment_methods(payment_method_id)
-);
 
--- ===============================
--- Customs Declarations
--- ===============================
+    PRIMARY KEY (bill_id)
+    FOREIGN KEY (patient_id) REFERENCES patients(patient_id)
+    FOREIGN KEY (appointment_id) REFERENCES appointments (appointment_id)
+)
 
-CREATE TABLE customs_declarations (
-    declaration_id INT AUTO_INCREMENT PRIMARY KEY,
-    leg_id INT NOT NULL,
-    document_number VARCHAR(100),
-    status_id INT DEFAULT 1, -- FK to customs_statuses
-    clearance_date DATE,
-    FOREIGN KEY (leg_id) REFERENCES shipment_legs(leg_id) ON DELETE CASCADE,
-    FOREIGN KEY (status_id) REFERENCES customs_statuses(status_id)
-);
+CREATE TABLE insurance_claims(
+    claim_id INT NOT NULL,
+    patient_id INT,
+    insurance_provider VARCHAR(255),
+    policy_number VARCHAR(255),
+    claim_status ENUM(submitted, approved, denied, pending),
+    claim_amount DECIMAL,
+    submission_date DATE,
+
+    PRIMARY KEY(claim_id)
+    FOREIGN KEY (patient_id) REFERENCES patients(patient_id)
+)
+
+-- ===========================
+
+-- 08. ANALYTICS & LOGS
+
+-- ===========================
+
+CREATE TABLE audit_logs(
+    log_id INT NOT NULL,
+    user_id INT,
+    user_action VARCHAR,
+    action_timestamp TIMESTAMP,
+    ip_address VARCHAR,
+
+    PRIMARY KEY (log_id)
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+)
+
+CREATE TABLE reports(
+    report_id INT NOT NULL,
+    report_type VARCHAR,
+    generated_by INT,
+    content TEXT,
+    created_at TIMESTAMP,
+
+    PRIMARY KEY (report_id)
+    FOREIGN KEY (generated_by) REFERENCES staff(staff_id)
+)
